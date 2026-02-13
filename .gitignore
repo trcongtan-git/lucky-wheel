@@ -3,3 +3,5 @@ data/store.json
 .env
 .env.*
 .vercel
+.next
+*.log
