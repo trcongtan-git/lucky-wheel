@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (function(){ if (new URLSearchParams(window.location.search).get('embed') === '1') document.documentElement.classList.add('embed-mode'); })();
+  </script>
   <style>
     :root{
       --chroma: #02ff73;
@@ -28,6 +31,8 @@
       color: white;
       overflow: hidden;
     }
+    /* Khi nhúng trong trang /split (?embed=1): nền trong suốt để thấy background trang split */
+    html.embed-mode body { background: transparent !important; }
 
     .wrap{
       height: 100%;

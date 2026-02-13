@@ -40,10 +40,20 @@
         <div class="menubar-content">
             <img src="images/logo.png" alt="Logo" class="logo">
             <div class="menubar-buttons">
-                <label for="fileInput" class="menubar-btn import-btn-menubar">
-                    <span class="btn-text">Nhân viên tham gia</span>
-                    <span class="player-counter-small" id="playerCounter">0</span>
-                </label>
+                <div class="participant-dropdown-wrap">
+                    <button type="button" class="menubar-btn import-btn-menubar" id="btnParticipant">
+                        <span class="btn-text">Nhân viên tham gia</span>
+                        <span class="player-counter-small" id="playerCounter">0</span>
+                    </button>
+                    <div class="participant-popup" id="participantPopup">
+                        <button type="button" class="participant-popup-option" id="btnImportParticipant">
+                            <span class="btn-text">Import</span>
+                        </button>
+                        <button type="button" class="participant-popup-option" id="btnDownloadTemplate">
+                            <span class="btn-text">Tải Template</span>
+                        </button>
+                    </div>
+                </div>
                 <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
                 <button class="menubar-btn result-btn" id="resultBtn">
                     <span class="btn-text">Kết quả</span>
@@ -55,18 +65,20 @@
 
     <div class="container">
         <div class="wheel-container" id="wheelContainer">
-            <div class="wheel-wrapper" id="wheelWrapper">
-                <canvas id="wheelCanvas"></canvas>
+            <div class="wheel-inner-wrap">
+                <div class="wheel-wrapper" id="wheelWrapper">
+                    <canvas id="wheelCanvas"></canvas>
+                </div>
+                <div class="center-button" id="playButton">
+                    <div class="play-icon">▶</div>
+                </div>
+                <div class="pointer">
+                    <div class="pointer-hole">
+                        <div class="pointer-inner"></div>
+                    </div>
+                    <div class="pointer-tip"></div>
+                </div>
             </div>
-            <div class="center-button" id="playButton">
-                <div class="play-icon">▶</div>
-            </div>
-        </div>
-        <div class="pointer">
-            <div class="pointer-hole">
-                <div class="pointer-inner"></div>
-            </div>
-            <div class="pointer-tip"></div>
         </div>
 
         <div class="result-popup" id="resultPopup">

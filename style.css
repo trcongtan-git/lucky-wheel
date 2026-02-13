@@ -31,8 +31,13 @@ body {
     padding: 20px;
     padding-top: 100px;
     overflow-x: hidden;
-    overflow-y: hidden; /* Ẩn scroll dọc để tránh scroll khi wheel quay */
+    overflow-y: hidden;
     box-sizing: border-box;
+}
+
+/* Khi nhúng trong trang /split (?split=1): nền trong suốt để thấy background.jpg của trang split */
+body.split-embed {
+    background: transparent !important;
 }
 
 /* Menubar – tối ưu cho tách nền xanh (#02ff73): màu đỏ solid, viền rõ để không bị key và đẹp khi nền trong suốt */
@@ -41,7 +46,7 @@ body {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
+    z-index: 200; /* Trên pointer vòng quay (100) để dropdown không bị che */
     padding: 8px;
 }
 
@@ -112,6 +117,56 @@ body {
     font-size: 0.9rem;
 }
 
+.participant-dropdown-wrap {
+    position: relative;
+}
+
+.participant-popup {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 200;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.participant-popup.is-open {
+    display: flex;
+}
+
+.participant-popup-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.participant-popup-option:hover {
+    background: rgba(139, 24, 25, 0.08);
+    color: #8b1819;
+}
+
+.participant-popup-option .btn-text {
+    font-size: 0.9rem;
+}
+
 .player-counter-small,
 .result-counter-small {
     background: #7a1417;
@@ -173,6 +228,17 @@ body {
     z-index: 50;
 }
 
+/* Wrapper cùng kích thước wheel: pointer định vị theo mép trên wheel (top âm) → đúng mọi tỉ lệ */
+.wheel-inner-wrap {
+    position: relative;
+    width: min(900px, 70vh, 70vw);
+    height: min(900px, 70vh, 70vw);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .wheel-wrapper {
     position: relative;
     width: min(900px, 70vh, 70vw);
@@ -180,11 +246,18 @@ body {
     max-width: 900px;
     max-height: 900px;
     transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Căn giữa canvas trong wrapper, tránh lệch do inline/baseline */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #wheelCanvas {
+    display: block; /* Tránh khoảng trống do baseline (inline) */
     width: 100%;
     height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     border-radius: 50%;
     background: white;
 }
@@ -237,9 +310,10 @@ body {
     letter-spacing: 1px;
 }
 
+/* Pointer trong .wheel-inner-wrap: top âm cố định → luôn ngay trên mép wheel, mọi tỉ lệ */
 .pointer {
     position: absolute;
-    top: calc(50% - min(450px, 35vh, 35vw) - 30px);
+    top: -48px; /* xuống nữa, đầu pointer gần/chạm mép wheel */
     left: 50%;
     transform: translateX(-50%);
     width: 48px;
@@ -249,17 +323,8 @@ body {
     transition: transform 2s cubic-bezier(0.34, 1.56, 0.64, 1), position 2s ease;
 }
 
-/* Điều chỉnh pointer khi wheel zoom */
-.wheel-container.zoomed ~ .pointer {
-    position: fixed;
-    /* Wheel center ở 90vh, pointer nằm trên wheel với cùng vị trí tương đối như khi chưa zoom */
-    /* Khi chưa zoom: pointer top = 50% - wheel radius - 30px */
-    /* Khi zoom: wheel center = 90vh, wheel radius = (wheel size / 2) * 2 = wheel size */
-    /* Pointer top = 90vh - wheel size - 30px * 2 (vì scale 2) */
-    /* Wheel size khi zoom = min(900px, 70vh, 70vw) * 2 */
-    top: calc(90vh - min(900px, 70vh, 70vw) - 60px);
-    left: 50vw;
-    transform: translateX(-50%) scale(2);
+/* Khi zoom, pointer nằm trong .wheel-container nên tự động scale/theo wheel, không cần override */
+.wheel-container.zoomed .pointer {
     z-index: 100;
 }
 
@@ -328,6 +393,12 @@ body {
     align-items: center;
     z-index: 1000;
     animation: fadeIn 0.3s ease;
+    /* Cho phép click xuyên qua overlay để nhấn được menubar; chỉ khung popup nhận click */
+    pointer-events: none;
+}
+
+.result-popup .popup-content {
+    pointer-events: auto;
 }
 
 .result-popup.show {
@@ -633,6 +704,11 @@ body.popup-open .pointer {
         padding: 2px 6px;
     }
 
+    .wheel-inner-wrap {
+        width: min(600px, 80vh, 90vw);
+        height: min(600px, 80vh, 90vw);
+    }
+    
     .wheel-wrapper {
         width: min(600px, 80vh, 90vw);
         height: min(600px, 80vh, 90vw);
@@ -645,11 +721,7 @@ body.popup-open .pointer {
     }
     
     .pointer {
-        top: calc(50% - min(300px, 40vh, 45vw) - 20px);
-    }
-    
-    .pointer {
-        top: calc(50% - min(300px, 40vh, 45vw) - 20px);
+        top: -48px; /* xuống nữa (mobile) */
     }
 
     .center-button {

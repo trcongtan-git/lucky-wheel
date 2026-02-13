@@ -3,12 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vòng quay + Đập trứng | Split view</title>
+  <title>Vòng quay may mắn | Đập trứng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; overflow: hidden; }
+    html, body { height: 100%; overflow: hidden; font-family: Inter, system-ui, sans-serif; background: url('images/background.jpg') center center / cover no-repeat fixed; }
+
+    /* Mặc định: chỉ hiển thị vòng quay (full màn hình), nút Đập trứng nằm trong toolbar của iframe */
+    .view-single .split-container { display: none; }
+    .view-single .frame-wheel-only {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .frame-wheel-only iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .view-single .btn-collapse-wrap { display: none; }
+
+    /* Khi mở đập trứng: chia đôi màn hình */
+    .view-split .frame-wheel-only { display: none; }
+    .view-split .split-container { display: flex; width: 100%; height: 100%; }
+    .view-split .btn-collapse-wrap { display: flex; }
+
+    .frame-wheel-only { display: block; }
+
     .split-container {
-      display: flex;
+      display: none;
       width: 100%;
       height: 100%;
     }
@@ -17,7 +43,6 @@
       min-width: 0;
       height: 100%;
       position: relative;
-      border: none;
     }
     .panel iframe {
       display: block;
@@ -38,7 +63,6 @@
       z-index: 10;
       padding: 4px 10px;
       border-radius: 8px;
-      font-family: Inter, system-ui, sans-serif;
       font-size: 12px;
       font-weight: 600;
       pointer-events: none;
@@ -53,52 +77,130 @@
       background: rgba(0,0,0,0.25);
       color: #fff;
     }
+
+    /* Nút "Thu gọn" khi đang split - đóng màn hình đập trứng */
+    .btn-collapse-wrap {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 101;
+    }
+    .btn-collapse {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #8b1819;
+      border: 1px solid #7a1417;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .btn-collapse:hover {
+      background: #9a1c1e;
+      border-color: #6b1214;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      .btn-collapse-wrap { top: 10px; right: 12px; }
+    }
   </style>
 </head>
-<body>
-  <div class="split-container">
-    <div class="panel panel-left">
+<body class="view-single">
+  <!-- Wrapper chứa iframe vòng quay (single view = full màn hình). Cùng một iframe được chuyển sang panel-left khi mở split. -->
+  <div class="frame-wheel-only" id="frameWheelOnlyWrap">
+    <iframe id="wheelIframe" src="/?split=1" title="Vòng quay may mắn"></iframe>
+  </div>
+
+  <!-- Nút Thu gọn (chỉ hiện khi đang chia đôi màn hình) -->
+  <div class="btn-collapse-wrap" id="btnCollapseWrap">
+    <button type="button" class="btn-collapse" id="btnCollapse">Thu gọn</button>
+  </div>
+
+  <!-- Chế độ chia đôi: trái = vòng quay (iframe chuyển vào đây), phải = đập trứng -->
+  <div class="split-container" id="splitContainer">
+    <div class="panel panel-left" id="leftPanel">
       <span class="panel-label">Vòng quay may mắn</span>
-      <iframe src="/" title="Vòng quay may mắn"></iframe>
     </div>
     <div class="divider" id="divider" title="Kéo để đổi tỉ lệ"></div>
     <div class="panel panel-right">
       <span class="panel-label">Game đập trứng</span>
-      <iframe src="/egg-smash-game.html" title="Game đập trứng nhận quà"></iframe>
+      <iframe src="/egg-smash-game.html?embed=1" title="Game đập trứng nhận quà"></iframe>
     </div>
   </div>
+
   <script>
     (function () {
-      var divider = document.getElementById('divider');
-      var container = document.querySelector('.split-container');
-      var left = document.querySelector('.panel-left');
-      var right = document.querySelector('.panel-right');
-      if (!divider || !left || !right) return;
-      var startX, startLeftPercent;
-      function onStart(e) {
-        startX = e.clientX || (e.touches && e.touches[0].clientX);
-        startLeftPercent = (left.offsetWidth / container.offsetWidth) * 100;
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('touchend', onEnd);
+      var body = document.body;
+      var btnCollapse = document.getElementById('btnCollapse');
+      var splitContainer = document.getElementById('splitContainer');
+      var leftPanel = document.getElementById('leftPanel');
+      var rightPanel = splitContainer ? splitContainer.querySelector('.panel-right') : null;
+      var wheelIframe = document.getElementById('wheelIframe');
+      var frameWheelOnlyWrap = document.getElementById('frameWheelOnlyWrap');
+
+      function showSingle() {
+        if (wheelIframe && leftPanel && frameWheelOnlyWrap && wheelIframe.parentNode === leftPanel) {
+          frameWheelOnlyWrap.appendChild(wheelIframe);
+        }
+        body.classList.remove('view-split');
+        body.classList.add('view-single');
       }
-      function onMove(e) {
-        var x = e.clientX || (e.touches && e.touches[0].clientX);
-        var dx = x - startX;
-        var percent = (dx / container.offsetWidth) * 100;
-        var newLeft = Math.max(20, Math.min(80, startLeftPercent + percent));
-        left.style.flex = '0 0 ' + newLeft + '%';
-        right.style.flex = '1 1 ' + (100 - newLeft) + '%';
+      function showSplit() {
+        body.classList.remove('view-single');
+        body.classList.add('view-split');
+        if (wheelIframe && leftPanel && frameWheelOnlyWrap && wheelIframe.parentNode === frameWheelOnlyWrap) {
+          leftPanel.appendChild(wheelIframe);
+        }
       }
-      function onEnd() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onEnd);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onEnd);
+
+      // Nhận lệnh từ iframe vòng quay (nút Đập trứng trong toolbar) → mở chia đôi màn hình
+      window.addEventListener('message', function (e) {
+        if (e.data && e.data.type === 'OPEN_SPLIT_VIEW') {
+          showSplit();
+        }
+      });
+
+      if (btnCollapse) {
+        btnCollapse.addEventListener('click', function () {
+          showSingle();
+        });
       }
-      divider.addEventListener('mousedown', onStart);
-      divider.addEventListener('touchstart', onStart, { passive: true });
+
+      if (divider && leftPanel && rightPanel) {
+        var startX, startLeftPercent;
+        function onStart(e) {
+          startX = e.clientX || (e.touches && e.touches[0].clientX);
+          startLeftPercent = (leftPanel.offsetWidth / splitContainer.offsetWidth) * 100;
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onEnd);
+          document.addEventListener('touchmove', onMove, { passive: false });
+          document.addEventListener('touchend', onEnd);
+        }
+        function onMove(e) {
+          var x = e.clientX || (e.touches && e.touches[0].clientX);
+          var dx = x - startX;
+          var percent = (dx / splitContainer.offsetWidth) * 100;
+          var newLeft = Math.max(20, Math.min(80, startLeftPercent + percent));
+          leftPanel.style.flex = '0 0 ' + newLeft + '%';
+          rightPanel.style.flex = '1 1 ' + (100 - newLeft) + '%';
+        }
+        function onEnd() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onEnd);
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onEnd);
+        }
+        divider.addEventListener('mousedown', onStart);
+        divider.addEventListener('touchstart', onStart, { passive: true });
+      }
     })();
   </script>
 </body>

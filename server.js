@@ -15,9 +15,9 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'tantc02-company-sharing.html'));
 });
 
-// Ghép vòng quay + game trứng: chia đôi màn hình trái phải
+// Một path gộp vòng quay + đập trứng (unified, không iframe cho vòng quay)
 app.get('/split', (req, res) => {
-  res.sendFile(path.join(__dirname, 'split-view.html'));
+  res.sendFile(path.join(__dirname, 'unified.html'));
 });
 
 function readStore() {

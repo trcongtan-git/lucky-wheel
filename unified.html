@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vòng quay may mắn | Đập trứng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Unified page: vòng quay mặc định; màn hình đập trứng full khi mở từ popup kết quả */
+        body.unified-page { background: url('images/background.jpg') center center / cover no-repeat fixed; }
+        .wheel-viewport { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .wheel-viewport .container { margin-left: auto; margin-right: auto; }
+        .egg-fullscreen { display: none; position: fixed; inset: 0; z-index: 50; overflow: auto; background: transparent; }
+        body.unified-page.view-egg .wheel-viewport { display: none; }
+        body.unified-page.view-egg .egg-fullscreen { display: block; }
+        .popup-egg-btn { background: rgba(27, 77, 62, 0.25); border: none; color: #1B4D3E; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.3s ease; }
+        .popup-egg-btn:hover { background: rgba(27, 77, 62, 0.4); transform: scale(1.05); }
+        /* === Game đập trứng (scoped) === */
+        .egg-game { height: 100%; min-height: 100vh; margin: 0; font-family: Inter, system-ui, sans-serif; color: white; overflow: auto; background: transparent; }
+        .egg-game .wrap { height: 100%; min-height: 100vh; display: grid; place-items: center; padding: 24px 18px; }
+        .egg-game .board { width: min(980px, 96vw); display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(10px, 2vw, 18px); align-items: stretch; }
+        .egg-game .egg { position: relative; height: clamp(120px, 16vh, 170px); border-radius: 22px; border: 2px solid rgba(0,0,0,0.28); background: rgba(0,0,0,0.16); cursor: pointer; overflow: hidden; isolation: isolate; transform: translateZ(0); transition: transform 160ms ease, background 160ms ease, border-color 160ms ease; }
+        .egg-game .egg:hover { transform: translateY(-2px); background: rgba(0,0,0,0.22); border-color: rgba(0,0,0,0.38); }
+        .egg-game .egg:active { transform: translateY(0); }
+        .egg-game .egg::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 80% at 30% 20%, rgba(255,255,255,0.24), transparent 55%), radial-gradient(90% 70% at 70% 70%, rgba(255,255,255,0.18), transparent 60%), repeating-linear-gradient(135deg, rgba(255,255,255,0.08) 0 10px, rgba(0,0,0,0.05) 10px 20px); opacity: 0.9; z-index: 0; }
+        .egg-game .egg::after { content: ""; position: absolute; inset: -40%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), transparent 45%); transform: rotate(18deg); opacity: 0.8; z-index: 0; }
+        .egg-game .egg-shape { position: absolute; inset: 14px; display: block; z-index: 1; }
+        .egg-game .egg-base { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+        .egg-game .egg-number { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; font-weight: 900; color: #4a2c2a; background: rgba(255,255,255,0.85); border: 2px solid rgba(0,0,0,0.22); z-index: 3; }
+        .egg-game .egg-gift { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -58%); width: min(120px, 46%); height: auto; object-fit: contain; pointer-events: none; user-select: none; z-index: 4; background: rgba(255,255,255,0.8); border-radius: 16px; padding: 8px; border: 1px solid rgba(0,0,0,0.12); }
+        .egg-game .egg.is-opened { cursor: default; }
+        .egg-game .egg.is-opened:hover { transform: none; }
+        .egg-game .egg-overlay { position: fixed; inset: 0; display: none; z-index: 999; background: transparent; }
+        .egg-game .egg-overlay.show { display: grid; place-items: center; }
+        .egg-game .egg-popup { width: min(760px, 94vw); min-height: 520px; border-radius: 28px; background: #f5e6be; color: #4a2c2a; border: 3px solid #a67c00; position: relative; overflow: hidden; padding: 28px 22px; display: grid; grid-template-rows: auto 1fr auto; gap: 18px; }
+        .egg-game .egg-popup .hint { position: absolute; top: 14px; right: 14px; font-weight: 700; font-size: 1.2rem; color: rgba(74,44,42,0.9); background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.12); width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .egg-game .egg-popup .egg-popup-title { text-align: center; font-weight: 900; font-size: clamp(22px, 3.4vw, 34px); letter-spacing: 0.2px; margin: 8px 0 0; }
+        .egg-game .reveal { display: grid; place-items: center; position: relative; margin: 0 auto; width: min(420px, 76vw); aspect-ratio: 1 / 1; }
+        .egg-game .popup-egg { width: min(320px, 64vw); height: auto; object-fit: contain; user-select: none; pointer-events: none; transform-origin: 50% 70%; z-index: 2; }
+        .egg-game .popup-egg.is-shaking { animation: eggShake 180ms ease-in-out infinite; }
+        @keyframes eggShake { 0% { transform: translateX(0) rotate(0deg) scale(1); } 25% { transform: translateX(-4px) rotate(-2deg) scale(1.01); } 50% { transform: translateX(4px) rotate(2deg) scale(1.01); } 75% { transform: translateX(-3px) rotate(-1.5deg) scale(1.01); } 100% { transform: translateX(0) rotate(0deg) scale(1); } }
+        .egg-game .popup-gift { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) scale(0.2); transform-origin: 50% 90%; width: min(260px, 70vw); height: auto; object-fit: contain; user-select: none; pointer-events: none; z-index: 3; opacity: 0; background: rgba(255,255,255,0.92); border-radius: 18px; padding: 12px; border: 1px solid rgba(0,0,0,0.12); }
+        .egg-game .popup-gift.show { opacity: 1; animation: giftZoom 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes giftZoom { from { transform: translate(-50%, -50%) scale(0.2); } to { transform: translate(-50%, -50%) scale(1); } }
+        .egg-game .confetti { position: absolute; inset: -10%; overflow: hidden; pointer-events: none; z-index: 4; }
+        .egg-game .confetti-piece { position: absolute; width: 10px; height: 16px; border-radius: 3px; opacity: 0.95; animation: confettiFall 1200ms ease-out forwards; }
+        @keyframes confettiFall { 0% { transform: translate3d(var(--x0), var(--y0), 0) rotate(0deg); opacity: 1; } 100% { transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); opacity: 0; } }
+        .egg-game .prize-name { display: none; text-align: center; margin: 4px auto 0; padding: 10px 14px 12px; border-radius: 18px; background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.12); font-weight: 900; font-size: clamp(18px, 2.4vw, 26px); color: #7a1417; word-break: break-word; }
+        .egg-game .prize-name.show { display: block; }
+        .egg-game .footer { text-align: center; font-weight: 700; opacity: 0.9; color: #4a2c2a; }
+        @media (max-width: 760px) { .egg-game .board { grid-template-columns: repeat(2, 1fr); } .egg-game .egg { height: 140px; } }
+    </style>
+</head>
+<body class="unified-page">
+    <div class="menubar">
+        <div class="menubar-content">
+            <img src="images/logo.png" alt="Logo" class="logo">
+            <div class="menubar-buttons">
+                <div class="participant-dropdown-wrap">
+                    <button type="button" class="menubar-btn import-btn-menubar" id="btnParticipant">
+                        <span class="btn-text">Nhân viên tham gia</span>
+                        <span class="player-counter-small" id="playerCounter">0</span>
+                    </button>
+                    <div class="participant-popup" id="participantPopup">
+                        <button type="button" class="participant-popup-option" id="btnImportParticipant">
+                            <span class="btn-text">Import</span>
+                        </button>
+                        <button type="button" class="participant-popup-option" id="btnDownloadTemplate">
+                            <span class="btn-text">Tải Template</span>
+                        </button>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                <button class="menubar-btn result-btn" id="resultBtn">
+                    <span class="btn-text">Kết quả</span>
+                    <span class="result-counter-small" id="resultCounter">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vòng quay: luôn cùng một chỗ trong DOM, chỉ đổi kích thước/vị trí bằng CSS khi split -->
+    <div class="wheel-viewport" id="wheelViewport">
+        <div class="container" id="wheelSection">
+            <div class="wheel-container" id="wheelContainer">
+                <div class="wheel-inner-wrap">
+                    <div class="wheel-wrapper" id="wheelWrapper">
+                        <canvas id="wheelCanvas"></canvas>
+                    </div>
+                    <div class="center-button" id="playButton">
+                        <div class="play-icon">▶</div>
+                    </div>
+                    <div class="pointer">
+                        <div class="pointer-hole">
+                            <div class="pointer-inner"></div>
+                        </div>
+                        <div class="pointer-tip"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="result-popup" id="resultPopup">
+                <div class="popup-content">
+                    <div class="popup-header-buttons">
+                        <button type="button" class="popup-egg-btn" id="btnEggInPopup" title="Đập trứng">Đập trứng</button>
+                        <button class="popup-delete" id="deleteResult" title="Xóa kết quả này">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                        <button class="popup-close" id="closePopup">×</button>
+                    </div>
+                    <div class="popup-illustration">
+                        <div class="party-popper">🎉</div>
+                    </div>
+                    <h2 class="popup-title" id="popupTitle">Chúc Mừng!</h2>
+                    <div class="popup-body">
+                        <div class="congratulations-text" id="congratulationsText" style="display: none;">Chúc mừng</div>
+                        <div class="winner-name" id="winnerName"></div>
+                        <div class="results-list" id="resultsList" style="display: none;"></div>
+                    </div>
+                    <div class="popup-footer-text" id="popupFooterText">Town Hall 2025</div>
+                    <button class="popup-share-btn" id="shareBtn" style="display: none;">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Màn hình đập trứng full (chỉ hiện khi mở từ popup kết quả vòng quay) -->
+    <div class="egg-fullscreen" id="eggFullscreen">
+            <div class="egg-game" id="eggGame">
+                <div class="wrap">
+                    <div class="board" id="eggBoard" aria-label="Bảng trứng"></div>
+                </div>
+                <div class="egg-overlay" id="eggOverlay" role="dialog" aria-modal="true" aria-label="Popup kết quả">
+                    <div class="egg-popup" id="eggPopup">
+                        <div class="hint" aria-label="Đóng">×</div>
+                        <h2 class="egg-popup-title" id="eggPopupTitle">Đang mở quà...</h2>
+                        <div class="reveal" aria-hidden="true">
+                            <div class="confetti" id="eggConfetti"></div>
+                            <img class="popup-egg is-shaking" id="eggPopupEggImg" alt="Trứng" src="images/egg-png/closed.png" />
+                            <img class="popup-gift" id="eggPopupGiftImg" alt="Ảnh sản phẩm" />
+                        </div>
+                        <div class="prize-name" id="eggPrizeName">---</div>
+                        <div class="footer">Town Hall 2025</div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        (function () {
+            var body = document.body;
+            var resultPopup = document.getElementById('resultPopup');
+            var btnEggInPopup = document.getElementById('btnEggInPopup');
+
+            if (btnEggInPopup && resultPopup) {
+                btnEggInPopup.addEventListener('click', function () {
+                    resultPopup.classList.remove('show');
+                    body.classList.remove('popup-open');
+                    document.getElementById('playButton').classList.remove('disabled');
+                    window.unifiedOnEggPopupClose = function () {
+                        body.classList.remove('view-egg');
+                        resultPopup.classList.add('show');
+                        body.classList.add('popup-open');
+                        window.unifiedOnEggPopupClose = null;
+                    };
+                    body.classList.add('view-egg');
+                });
+            }
+        })();
+
+        // === Game đập trứng (all-in-one, không iframe) ===
+        (function () {
+            var TOTAL = 10;
+            var FIXED_GIFTS = [
+                { title: 'Phiếu mua hàng tại Siêu thị Kingfoodmart trị giá 500.000đ', image: 'images/egg-game-gift/phieu-mua-hang-kingfoodmart.png' },
+                { title: 'Tai nghe chụp tai JBL Tune 520BT', image: 'images/egg-game-gift/jbl-tune-520BT.png' },
+                { title: 'Pin dự phòng Baseus Enerfill Bipow 2 Pro', image: 'images/egg-game-gift/baseus-enerfill-bipow2-pro.png' },
+                { title: 'Loa Bluetooth JBL Clip 5', image: 'images/egg-game-gift/jbl-clip5.png' },
+                { title: 'Nồi lẩu điện Kangaroo KG50EH1', image: 'images/egg-game-gift/Noi-lau-dien-kangaroo-kg50eh1-10.png' },
+                { title: 'Tai nghe chụp tai JBL Tune 520BT', image: 'images/egg-game-gift/jbl-tune-520BT.png' },
+                { title: 'Nồi lẩu điện Kangaroo KG50EH1', image: 'images/egg-game-gift/Noi-lau-dien-kangaroo-kg50eh1-10.png' },
+                { title: 'Phiếu mua hàng tại Siêu thị Kingfoodmart trị giá 500.000đ', image: 'images/egg-game-gift/phieu-mua-hang-kingfoodmart.png' },
+                { title: 'Loa Bluetooth JBL Clip 5', image: 'images/egg-game-gift/jbl-clip5.png' },
+                { title: 'Pin dự phòng Baseus Enerfill Bipow 2 Pro', image: 'images/egg-game-gift/baseus-enerfill-bipow2-pro.png' }
+            ];
+            var board = document.getElementById('eggBoard');
+            var overlay = document.getElementById('eggOverlay');
+            var popupTitle = document.getElementById('eggPopupTitle');
+            var prizeName = document.getElementById('eggPrizeName');
+            var popupEggImg = document.getElementById('eggPopupEggImg');
+            var popupGiftImg = document.getElementById('eggPopupGiftImg');
+            var confetti = document.getElementById('eggConfetti');
+            var eggPopup = document.getElementById('eggPopup');
+            if (!board || !overlay) return;
+            var opened = new Array(TOTAL).fill(false);
+            var eggPrize = new Array(TOTAL).fill(null);
+            var revealTimer = null;
+
+            function renderBoard() {
+                board.innerHTML = '';
+                for (var i = 0; i < TOTAL; i++) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'egg' + (opened[i] ? ' is-opened' : '');
+                    btn.dataset.index = String(i);
+                    btn.setAttribute('aria-label', 'Trứng số ' + (i + 1));
+                    var shape = document.createElement('div');
+                    shape.className = 'egg-shape';
+                    var eggBase = document.createElement('img');
+                    eggBase.className = 'egg-base';
+                    eggBase.alt = opened[i] ? 'Trứng đã đập' : 'Trứng chưa đập';
+                    eggBase.src = opened[i] ? 'images/egg-png/opened.png' : 'images/egg-png/closed.png';
+                    var num = document.createElement('div');
+                    num.className = 'egg-number';
+                    num.textContent = String(i + 1);
+                    shape.appendChild(eggBase);
+                    shape.appendChild(num);
+                    btn.appendChild(shape);
+                    if (opened[i]) {
+                        var giftImg = document.createElement('img');
+                        giftImg.className = 'egg-gift';
+                        giftImg.alt = FIXED_GIFTS[i].title;
+                        giftImg.src = FIXED_GIFTS[i].image;
+                        btn.appendChild(giftImg);
+                    }
+                    (function (idx) { btn.addEventListener('click', function () { onEggClick(idx); }); })(i);
+                    board.appendChild(btn);
+                }
+            }
+            function pickPrizeForEgg(i) {
+                if (eggPrize[i]) return eggPrize[i];
+                eggPrize[i] = FIXED_GIFTS[i];
+                return FIXED_GIFTS[i];
+            }
+            function spawnConfetti() {
+                var colors = ['#a31c1e', '#7a1417', '#a67c00', '#fffdd0', '#1b4d3e', '#ffffff'];
+                for (var i = 0; i < 46; i++) {
+                    var p = document.createElement('div');
+                    p.className = 'confetti-piece';
+                    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    p.style.left = (Math.random() * 100) + '%';
+                    p.style.top = (-10 - Math.random() * 30) + '%';
+                    p.style.setProperty('--x0', (Math.random() * 40 - 20) + 'px');
+                    p.style.setProperty('--y0', (Math.random() * 20) + 'px');
+                    p.style.setProperty('--x1', (Math.random() * 520 - 260) + 'px');
+                    p.style.setProperty('--y1', (420 + Math.random() * 380) + 'px');
+                    p.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+                    p.style.animationDelay = (Math.random() * 160) + 'ms';
+                    p.style.animationDuration = (900 + Math.random() * 700) + 'ms';
+                    confetti.appendChild(p);
+                }
+                setTimeout(function () { confetti.innerHTML = ''; }, 2200);
+            }
+            function openOverlay(i) {
+                overlay.classList.add('show');
+                popupTitle.textContent = 'Đang mở quà...';
+                prizeName.textContent = '---';
+                prizeName.classList.remove('show');
+                popupGiftImg.removeAttribute('src');
+                popupGiftImg.classList.remove('show');
+                popupEggImg.src = 'images/egg-png/closed.png';
+                popupEggImg.classList.add('is-shaking');
+                confetti.innerHTML = '';
+                if (revealTimer) clearTimeout(revealTimer);
+                revealTimer = setTimeout(function () {
+                    var gift = pickPrizeForEgg(i);
+                    popupTitle.textContent = 'Chúc mừng!';
+                    popupEggImg.classList.remove('is-shaking');
+                    popupEggImg.src = 'images/egg-png/opened.png';
+                    popupGiftImg.src = gift.image;
+                    popupGiftImg.classList.add('show');
+                    spawnConfetti();
+                    prizeName.textContent = gift.title;
+                    prizeName.classList.add('show');
+                }, 5000);
+            }
+            function closeOverlay() {
+                if (window.unifiedOnEggPopupClose) {
+                    window.unifiedOnEggPopupClose();
+                    window.unifiedOnEggPopupClose = null;
+                }
+                overlay.classList.remove('show');
+                if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+                confetti.innerHTML = '';
+                popupGiftImg.classList.remove('show');
+                popupEggImg.classList.remove('is-shaking');
+            }
+            function onEggClick(i) {
+                if (!opened[i]) opened[i] = true;
+                renderBoard();
+                openOverlay(i);
+            }
+            overlay.addEventListener('click', closeOverlay);
+            if (eggPopup) eggPopup.addEventListener('click', function (e) { e.stopPropagation(); closeOverlay(); });
+            renderBoard();
+        })();
+    </script>
+</body>
+</html>

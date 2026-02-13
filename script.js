@@ -7,26 +7,76 @@ let wheelContainer, wheelWrapper;
 let results = []; // Lưu lịch sử kết quả
 let slowSpinAnimation = null; // Animation quay chậm
 
-// Load/Save data từ server (data/store.json)
+const SPLIT_STORAGE_KEY = 'lucky-spin-split-store';
+const MAIN_STORAGE_KEY = 'lucky-spin-store';
+function useSplitStorage() {
+    const p = (window.location.pathname || '').replace(/\/+$/, '');
+    return p === '/split';
+}
+
+// Load: /split → localStorage; trang chính → API, nếu API lỗi (Vercel static) → localStorage
 async function loadData() {
+    if (useSplitStorage()) {
+        try {
+            const raw = localStorage.getItem(SPLIT_STORAGE_KEY);
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (Array.isArray(data.players)) players = data.players;
+                if (Array.isArray(data.results)) results = data.results;
+            }
+        } catch (e) {
+            console.warn('Không đọc được dữ liệu từ localStorage (split):', e.message);
+        }
+        return;
+    }
     try {
         const res = await fetch('/api/data');
         if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data.players)) players = data.players;
             if (Array.isArray(data.results)) results = data.results;
+            return;
         }
     } catch (e) {
-        console.warn('Không load được dữ liệu từ server:', e.message);
+        /* API không có (Vercel static) → bỏ qua */
+    }
+    try {
+        const raw = localStorage.getItem(MAIN_STORAGE_KEY);
+        if (raw) {
+            const data = JSON.parse(raw);
+            if (Array.isArray(data.players)) players = data.players;
+            if (Array.isArray(data.results)) results = data.results;
+        }
+    } catch (e) {
+        console.warn('Không đọc được dữ liệu từ localStorage:', e.message);
     }
 }
 
+// Save: /split → localStorage; trang chính → API, nếu API lỗi → localStorage (Vercel static)
 function saveData() {
+    if (useSplitStorage()) {
+        try {
+            localStorage.setItem(SPLIT_STORAGE_KEY, JSON.stringify({ players, results }));
+        } catch (e) {
+            console.warn('Lưu dữ liệu vào localStorage (split) thất bại:', e.message);
+        }
+        return;
+    }
     fetch('/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ players, results }),
-    }).catch(e => console.warn('Lưu dữ liệu thất bại:', e.message));
+    })
+        .then((res) => {
+            if (!res.ok) throw new Error('API failed');
+        })
+        .catch(() => {
+            try {
+                localStorage.setItem(MAIN_STORAGE_KEY, JSON.stringify({ players, results }));
+            } catch (e) {
+                console.warn('Lưu dữ liệu vào localStorage thất bại:', e.message);
+            }
+        });
 }
 
 // Initialize
@@ -36,9 +86,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     wheelContainer = document.getElementById('wheelContainer');
     wheelWrapper = document.getElementById('wheelWrapper');
 
+    // Gọi ngay lần đầu (có thể wrapper chưa có kích thước cuối → lệch tâm)
     setCanvasSize();
 
     document.getElementById('fileInput').addEventListener('change', handleFileImport);
+    const btnParticipant = document.getElementById('btnParticipant');
+    const participantPopup = document.getElementById('participantPopup');
+    const btnImportParticipant = document.getElementById('btnImportParticipant');
+    const btnDownloadTemplate = document.getElementById('btnDownloadTemplate');
+    if (btnParticipant && participantPopup) {
+        btnParticipant.addEventListener('click', (e) => {
+            e.stopPropagation();
+            participantPopup.classList.toggle('is-open');
+        });
+        document.addEventListener('click', (e) => {
+            if (participantPopup.classList.contains('is-open') &&
+                !participantPopup.contains(e.target) && !btnParticipant.contains(e.target)) {
+                participantPopup.classList.remove('is-open');
+            }
+        });
+    }
+    if (btnImportParticipant && participantPopup) {
+        btnImportParticipant.addEventListener('click', () => {
+            participantPopup.classList.remove('is-open');
+            document.getElementById('fileInput').click();
+        });
+    }
+    if (btnDownloadTemplate && participantPopup) {
+        btnDownloadTemplate.addEventListener('click', () => {
+            participantPopup.classList.remove('is-open');
+            downloadTemplate();
+        });
+    }
     document.getElementById('playButton').addEventListener('click', startSpin);
     document.getElementById('closePopup').addEventListener('click', closePopup);
     document.getElementById('shareBtn').addEventListener('click', closePopup);
@@ -47,10 +126,68 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadData();
     drawWheel();
+
+    // Sửa lệch tâm: chạy lại sau khi layout xong (wrapper đã có offsetWidth/offsetHeight đúng)
+    function layoutReady() {
+        setCanvasSize();
+        drawWheel();
+        logWheelLayout();
+    }
+    requestAnimationFrame(() => {
+        requestAnimationFrame(layoutReady);
+    });
+    window.addEventListener('load', layoutReady);
+
+    // Cập nhật khi kích thước wrapper thay đổi (resize, font load, iframe...)
+    if (typeof ResizeObserver !== 'undefined' && wheelWrapper) {
+        const ro = new ResizeObserver(() => {
+            setCanvasSize();
+            drawWheel();
+        });
+        ro.observe(wheelWrapper);
+    }
+
     updatePlayerCounter();
     updateResultCounter();
     startSlowSpin();
+
+    // Chỉ khi ở split path (?split=1): nền trong suốt để thấy background trang split, thêm nút "Đập trứng" vào toolbar
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('split') === '1') {
+        document.body.classList.add('split-embed');
+        const menubarButtons = document.querySelector('.menubar-buttons');
+        if (menubarButtons) {
+            const btnEgg = document.createElement('button');
+            btnEgg.type = 'button';
+            btnEgg.className = 'menubar-btn';
+            btnEgg.id = 'btnEggInToolbar';
+            btnEgg.innerHTML = '<span class="btn-text">Đập trứng</span>';
+            btnEgg.addEventListener('click', () => {
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'OPEN_SPLIT_VIEW' }, '*');
+                }
+            });
+            menubarButtons.appendChild(btnEgg);
+        }
+    }
 });
+
+// Tải file template Excel (Mã nhân viên, Tên nhân viên)
+function downloadTemplate() {
+    if (typeof XLSX === 'undefined') {
+        console.warn('Thư viện XLSX chưa load.');
+        return;
+    }
+    const data = [
+        ['Mã nhân viên', 'Tên nhân viên'],
+        ['NV001', 'Nguyễn Văn A'],
+        ['NV002', 'Trần Thị B'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Danh sách');
+    XLSX.writeFile(wb, 'template.xlsx');
+}
 
 // Handle file import
 function handleFileImport(event) {
@@ -112,16 +249,44 @@ function getInitials(name) {
         .slice(0, 6);
 }
 
+// Debug: log kích thước và vị trí để kiểm tra lệch tâm (bật bằng window.WHEEL_DEBUG = true)
+function logWheelLayout() {
+    if (typeof window !== 'undefined' && !window.WHEEL_DEBUG) return;
+    if (!wheelWrapper || !canvas) return;
+    const wrap = wheelWrapper.getBoundingClientRect();
+    const btn = document.getElementById('playButton');
+    const btnRect = btn ? btn.getBoundingClientRect() : null;
+    const wrapperCenterX = wrap.left + wrap.width / 2;
+    const wrapperCenterY = wrap.top + wrap.height / 2;
+    const btnCenterX = btnRect ? btnRect.left + btnRect.width / 2 : 0;
+    const btnCenterY = btnRect ? btnRect.top + btnRect.height / 2 : 0;
+    const offsetPx = btnRect
+        ? { x: Math.round(btnCenterX - wrapperCenterX), y: Math.round(btnCenterY - wrapperCenterY) }
+        : null;
+    console.log('[Wheel debug]', {
+        wrapper: { w: wheelWrapper.offsetWidth, h: wheelWrapper.offsetHeight, left: wrap.left, top: wrap.top },
+        canvas: { w: canvas.width, h: canvas.height, styleW: canvas.style.width, styleH: canvas.style.height },
+        wrapperCenter: { x: wrapperCenterX, y: wrapperCenterY },
+        buttonCenter: { x: btnCenterX, y: btnCenterY },
+        offsetPx: offsetPx,
+    });
+}
+
 // Cập nhật kích thước canvas theo devicePixelRatio (canvas rõ nét trên Retina)
 function setCanvasSize() {
     if (!canvas || !wheelWrapper || !ctx) return;
     const dpr = window.devicePixelRatio || 1;
     const size = Math.min(wheelWrapper.offsetWidth, wheelWrapper.offsetHeight);
+    if (size <= 0) {
+        if (typeof window !== 'undefined' && window.WHEEL_DEBUG) console.warn('[Wheel] setCanvasSize bỏ qua: wrapper size =', size);
+        return;
+    }
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = size + 'px';
     canvas.style.height = size + 'px';
     ctx.scale(dpr, dpr);
+    logWheelLayout();
 }
 
 // Update player counter and show/hide play button
