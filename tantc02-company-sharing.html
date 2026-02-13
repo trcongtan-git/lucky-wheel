@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@tantc02 - Company Sharing Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Force font loading and apply immediately when ready
+        if ('fonts' in document) {
+            // Wait for fonts to be ready
+            document.fonts.ready.then(function() {
+                // Force reflow to apply fonts
+                document.body.style.fontFamily = document.body.style.fontFamily || '';
+            });
+            
+            // Also check if Inter font is loaded
+            const checkFont = setInterval(function() {
+                if (document.fonts.check('16px Inter')) {
+                    clearInterval(checkFont);
+                    // Force reflow
+                    document.body.style.fontFamily = document.body.style.fontFamily || '';
+                }
+            }, 50);
+            
+            // Clear interval after 3 seconds to avoid infinite loop
+            setTimeout(function() {
+                clearInterval(checkFont);
+            }, 3000);
+        }
+    </script>
+</head>
+<body>
+    <div class="menubar">
+        <div class="menubar-content">
+            <img src="images/logo.png" alt="Logo" class="logo">
+            <div class="menubar-buttons">
+                <label for="fileInput" class="menubar-btn import-btn-menubar">
+                    <span class="btn-text">Nhân viên tham gia</span>
+                    <span class="player-counter-small" id="playerCounter">0</span>
+                </label>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                <button class="menubar-btn result-btn" id="resultBtn">
+                    <span class="btn-text">Kết quả</span>
+                    <span class="result-counter-small" id="resultCounter">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="wheel-container" id="wheelContainer">
+            <div class="wheel-wrapper" id="wheelWrapper">
+                <canvas id="wheelCanvas"></canvas>
+            </div>
+            <div class="center-button" id="playButton">
+                <div class="play-icon">▶</div>
+            </div>
+        </div>
+        <div class="pointer">
+            <div class="pointer-hole">
+                <div class="pointer-inner"></div>
+            </div>
+            <div class="pointer-tip"></div>
+        </div>
+
+        <div class="result-popup" id="resultPopup">
+            <div class="popup-content">
+                <div class="popup-header-buttons">
+                    <button class="popup-delete" id="deleteResult" title="Xóa kết quả này">
+                        <i class="fa-solid fa-eraser"></i>
+                    </button>
+                    <button class="popup-close" id="closePopup">×</button>
+                </div>
+                <div class="popup-illustration">
+                    <div class="party-popper">🎉</div>
+                </div>
+                <h2 class="popup-title" id="popupTitle">Chúc Mừng!</h2>
+                <div class="popup-body">
+                    <div class="congratulations-text" id="congratulationsText" style="display: none;">Chúc mừng</div>
+                    <div class="winner-name" id="winnerName"></div>
+                    <div class="results-list" id="resultsList" style="display: none;"></div>
+                </div>
+                <div class="popup-footer-text" id="popupFooterText">Town Hall 2025</div>
+                <button class="popup-share-btn" id="shareBtn" style="display: none;">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hiệu ứng tuyết rơi (đã tắt)
+    <canvas id="snowCanvas"></canvas>
+    <script src="snow.js"></script>
+    -->
+    <script src="script.js"></script>
+</body>
+</html>
+

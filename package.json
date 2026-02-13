@@ -1,0 +1,26 @@
+{
+  "name": "lucky-wheel",
+  "version": "1.0.0",
+  "description": "Ứng dụng web vòng quay may mắn với tính năng import Excel",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "lucky-wheel",
+    "wheel",
+    "spinner",
+    "excel",
+    "xlsx"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
+

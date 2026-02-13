@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vòng quay + Đập trứng | Split view</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    .split-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+    .panel {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      position: relative;
+      border: none;
+    }
+    .panel iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .divider {
+      width: 4px;
+      background: #7a1417;
+      flex-shrink: 0;
+      cursor: col-resize;
+    }
+    .divider:hover { background: #921a1d; }
+    .panel-label {
+      position: absolute;
+      top: 8px;
+      z-index: 10;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .panel-left .panel-label {
+      left: 12px;
+      background: rgba(163, 28, 30, 0.9);
+      color: #fff;
+    }
+    .panel-right .panel-label {
+      right: 12px;
+      background: rgba(0,0,0,0.25);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="split-container">
+    <div class="panel panel-left">
+      <span class="panel-label">Vòng quay may mắn</span>
+      <iframe src="/" title="Vòng quay may mắn"></iframe>
+    </div>
+    <div class="divider" id="divider" title="Kéo để đổi tỉ lệ"></div>
+    <div class="panel panel-right">
+      <span class="panel-label">Game đập trứng</span>
+      <iframe src="/egg-smash-game.html" title="Game đập trứng nhận quà"></iframe>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var divider = document.getElementById('divider');
+      var container = document.querySelector('.split-container');
+      var left = document.querySelector('.panel-left');
+      var right = document.querySelector('.panel-right');
+      if (!divider || !left || !right) return;
+      var startX, startLeftPercent;
+      function onStart(e) {
+        startX = e.clientX || (e.touches && e.touches[0].clientX);
+        startLeftPercent = (left.offsetWidth / container.offsetWidth) * 100;
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+      }
+      function onMove(e) {
+        var x = e.clientX || (e.touches && e.touches[0].clientX);
+        var dx = x - startX;
+        var percent = (dx / container.offsetWidth) * 100;
+        var newLeft = Math.max(20, Math.min(80, startLeftPercent + percent));
+        left.style.flex = '0 0 ' + newLeft + '%';
+        right.style.flex = '1 1 ' + (100 - newLeft) + '%';
+      }
+      function onEnd() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      }
+      divider.addEventListener('mousedown', onStart);
+      divider.addEventListener('touchstart', onStart, { passive: true });
+    })();
+  </script>
+</body>
+</html>

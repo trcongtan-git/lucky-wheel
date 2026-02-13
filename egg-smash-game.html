@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Đập Trứng Nhận Quà</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --chroma: #02ff73;
+      --ink: #0c0f14;
+      --card: rgba(0,0,0,0.18);
+      --card2: rgba(0,0,0,0.28);
+      --line: #7a1417;
+      --accent: #a31c1e;
+      --accent2: #b92224;
+      --cream: #fffdd0;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--chroma);
+      color: white;
+      overflow: hidden;
+    }
+
+    .wrap{
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px 18px 24px;
+    }
+
+    .board{
+      width: min(980px, 96vw);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: clamp(10px, 2vw, 18px);
+      align-items: stretch;
+    }
+
+    .egg{
+      position: relative;
+      height: clamp(120px, 16vh, 170px);
+      border-radius: 22px;
+      border: 2px solid rgba(0,0,0,0.28);
+      background: rgba(0,0,0,0.16);
+      cursor: pointer;
+      overflow: hidden;
+      isolation: isolate;
+      transform: translateZ(0);
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+    .egg:hover{
+      transform: translateY(-2px);
+      background: rgba(0,0,0,0.22);
+      border-color: rgba(0,0,0,0.38);
+    }
+    .egg:active{ transform: translateY(0); }
+
+    /* "Hình ảnh phía sau shape" (placeholder) */
+    .egg::before{
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(80% 80% at 30% 20%, rgba(255,255,255,0.24), transparent 55%),
+        radial-gradient(90% 70% at 70% 70%, rgba(255,255,255,0.18), transparent 60%),
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.08) 0 10px, rgba(0,0,0,0.05) 10px 20px);
+      opacity: 0.9;
+      z-index: 0;
+    }
+    .egg::after{
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), transparent 45%);
+      transform: rotate(18deg);
+      opacity: 0.8;
+      z-index: 0;
+    }
+
+    /* Shape: hiển thị PNG quả trứng */
+    .egg-shape{
+      position: absolute;
+      inset: 14px;
+      display: block;
+      z-index: 1;
+    }
+    .egg-base{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+    .egg-number{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #4a2c2a;
+      background: rgba(255,255,255,0.85);
+      border: 2px solid rgba(0,0,0,0.22);
+      text-shadow: none;
+      z-index: 3;
+    }
+    /* Ảnh sản phẩm nằm trên cùng quả trứng đã đập */
+    .egg-gift{
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -58%);
+      width: min(120px, 46%);
+      height: auto;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      z-index: 4;
+      background: rgba(255,255,255,0.8);
+      border-radius: 16px;
+      padding: 8px;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+
+    /* Trạng thái đã đập: "mở trứng" */
+    .egg.is-opened{
+      cursor: default;
+    }
+    .egg.is-opened:hover{ transform: none; }
+
+    /* Popup full screen */
+    .overlay{
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 999;
+      background: transparent; /* không làm mờ để thuận tiện tách nền xanh */
+    }
+    .overlay.show{ display: grid; place-items: center; }
+
+    .popup{
+      width: min(760px, 94vw);
+      min-height: 520px;
+      border-radius: 28px;
+      background: #f5e6be;
+      color: #4a2c2a;
+      border: 3px solid #a67c00;
+      position: relative;
+      overflow: hidden;
+      padding: 28px 22px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+    }
+
+    .popup .hint{
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: rgba(74,44,42,0.9);
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.12);
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .popup-title{
+      text-align: center;
+      font-weight: 900;
+      font-size: clamp(22px, 3.4vw, 34px);
+      letter-spacing: 0.2px;
+      margin: 8px 0 0;
+    }
+
+    /* Animation mở quà 5s */
+    .reveal{
+      display: grid;
+      place-items: center;
+      position: relative;
+      margin: 0 auto;
+      width: min(420px, 76vw);
+      aspect-ratio: 1 / 1;
+    }
+
+    .popup-egg{
+      width: min(320px, 64vw);
+      height: auto;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
+      transform-origin: 50% 70%;
+      z-index: 2;
+    }
+    .popup-egg.is-shaking{
+      animation: eggShake 180ms ease-in-out infinite;
+    }
+    @keyframes eggShake{
+      0%   { transform: translateX(0) rotate(0deg) scale(1); }
+      25%  { transform: translateX(-4px) rotate(-2deg) scale(1.01); }
+      50%  { transform: translateX(4px) rotate(2deg) scale(1.01); }
+      75%  { transform: translateX(-3px) rotate(-1.5deg) scale(1.01); }
+      100% { transform: translateX(0) rotate(0deg) scale(1); }
+    }
+
+    .popup-gift{
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      transform: translate(-50%, -50%) scale(0.2);
+      transform-origin: 50% 90%;
+      width: min(260px, 70vw);
+      height: auto;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0;
+      background: rgba(255,255,255,0.92);
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+    .popup-gift.show{
+      opacity: 1;
+      animation: giftZoom 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes giftZoom{
+      from { transform: translate(-50%, -50%) scale(0.2); }
+      to   { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .confetti{
+      position: absolute;
+      inset: -10%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .confetti-piece{
+      position: absolute;
+      width: 10px;
+      height: 16px;
+      border-radius: 3px;
+      opacity: 0.95;
+      animation: confettiFall 1200ms ease-out forwards;
+    }
+    @keyframes confettiFall{
+      0%   { transform: translate3d(var(--x0), var(--y0), 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); opacity: 0; }
+    }
+
+    .prize-name{
+      display: none;
+      text-align: center;
+      margin: 4px auto 0;
+      padding: 10px 14px 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      font-weight: 900;
+      font-size: clamp(18px, 2.4vw, 26px);
+      color: #7a1417;
+      word-break: break-word;
+    }
+    .prize-name.show{ display: block; }
+
+    .footer{
+      text-align: center;
+      font-weight: 700;
+      opacity: 0.9;
+      color: #4a2c2a;
+    }
+
+    @media (max-width: 760px){
+      .board{ grid-template-columns: repeat(2, 1fr); }
+      .egg{ height: 140px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="board" id="board" aria-label="Bảng trứng">
+      <!-- eggs injected by JS -->
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Popup kết quả">
+    <div class="popup" id="popup">
+      <div class="hint" aria-label="Đóng">×</div>
+      <h2 class="popup-title" id="popupTitle">Đang mở quà...</h2>
+      <div class="reveal" aria-hidden="true">
+        <div class="confetti" id="confetti"></div>
+        <img class="popup-egg is-shaking" id="popupEggImg" alt="Trứng" src="images/egg-png/closed.png" />
+        <img class="popup-gift" id="popupGiftImg" alt="Ảnh sản phẩm" />
+      </div>
+      <div class="prize-name" id="prizeName">---</div>
+      <div class="footer">Town Hall 2025</div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 10;
+
+    // Mapping cố định quà theo trứng 1..10 (index 0..9)
+    const FIXED_GIFTS = [
+      {
+        title: 'Phiếu mua hàng tại Siêu thị Kingfoodmart trị giá 500.000đ',
+        image: 'images/egg-game-gift/phieu-mua-hang-kingfoodmart.png',
+      },
+      {
+        title: 'Tai nghe chụp tai JBL Tune 520BT',
+        image: 'images/egg-game-gift/jbl-tune-520BT.png',
+      },
+      {
+        title: 'Pin dự phòng Baseus Enerfill Bipow 2 Pro',
+        image: 'images/egg-game-gift/baseus-enerfill-bipow2-pro.png',
+      },
+      {
+        title: 'Loa Bluetooth JBL Clip 5',
+        image: 'images/egg-game-gift/jbl-clip5.png',
+      },
+      {
+        title: 'Nồi lẩu điện Kangaroo KG50EH1',
+        image: 'images/egg-game-gift/Noi-lau-dien-kangaroo-kg50eh1-10.png',
+      },
+      {
+        title: 'Tai nghe chụp tai JBL Tune 520BT',
+        image: 'images/egg-game-gift/jbl-tune-520BT.png',
+      },
+      {
+        title: 'Nồi lẩu điện Kangaroo KG50EH1',
+        image: 'images/egg-game-gift/Noi-lau-dien-kangaroo-kg50eh1-10.png',
+      },
+      {
+        title: 'Phiếu mua hàng tại Siêu thị Kingfoodmart trị giá 500.000đ',
+        image: 'images/egg-game-gift/phieu-mua-hang-kingfoodmart.png',
+      },
+      {
+        title: 'Loa Bluetooth JBL Clip 5',
+        image: 'images/egg-game-gift/jbl-clip5.png',
+      },
+      {
+        title: 'Pin dự phòng Baseus Enerfill Bipow 2 Pro',
+        image: 'images/egg-game-gift/baseus-enerfill-bipow2-pro.png',
+      },
+    ];
+
+    const board = document.getElementById('board');
+    const overlay = document.getElementById('overlay');
+    const popupTitle = document.getElementById('popupTitle');
+    const prizeName = document.getElementById('prizeName');
+    const popupEggImg = document.getElementById('popupEggImg');
+    const popupGiftImg = document.getElementById('popupGiftImg');
+    const confetti = document.getElementById('confetti');
+
+    // state
+    const opened = new Array(TOTAL).fill(false);
+    const eggPrize = new Array(TOTAL).fill(null);
+    let revealTimer = null;
+    let activeEggIndex = null;
+
+    function renderBoard() {
+      board.innerHTML = '';
+      let count = 0;
+      for (let i = 0; i < TOTAL; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'egg' + (opened[i] ? ' is-opened' : '');
+        btn.dataset.index = String(i);
+        btn.setAttribute('aria-label', `Trứng số ${i + 1}`);
+
+        const shape = document.createElement('div');
+        shape.className = 'egg-shape';
+
+        const eggBase = document.createElement('img');
+        eggBase.className = 'egg-base';
+        eggBase.alt = opened[i] ? 'Trứng đã đập' : 'Trứng chưa đập';
+        eggBase.src = opened[i] ? 'images/egg-png/opened.png' : 'images/egg-png/closed.png';
+
+        const num = document.createElement('div');
+        num.className = 'egg-number';
+        num.textContent = String(i + 1);
+
+        shape.appendChild(eggBase);
+        shape.appendChild(num);
+        btn.appendChild(shape);
+
+        if (opened[i]) {
+          // Ảnh sản phẩm nằm trên cùng quả trứng đã đập (màn hình chính)
+          const giftImg = document.createElement('img');
+          giftImg.className = 'egg-gift';
+          giftImg.alt = FIXED_GIFTS[i].title;
+          giftImg.src = FIXED_GIFTS[i].image;
+          btn.appendChild(giftImg);
+          count++;
+        }
+
+        btn.addEventListener('click', () => onEggClick(i));
+        board.appendChild(btn);
+      }
+    }
+
+    function pickPrizeForEgg(i) {
+      if (eggPrize[i]) return eggPrize[i];
+      const gift = FIXED_GIFTS[i];
+      eggPrize[i] = gift;
+      return gift;
+    }
+
+    function openOverlay(i) {
+      activeEggIndex = i;
+      overlay.classList.add('show');
+      popupTitle.textContent = 'Đang mở quà...';
+      prizeName.textContent = '---';
+      prizeName.classList.remove('show');
+      popupGiftImg.removeAttribute('src');
+      popupGiftImg.classList.remove('show');
+      popupEggImg.src = 'images/egg-png/closed.png';
+      popupEggImg.classList.add('is-shaking');
+      confetti.innerHTML = '';
+
+      // Hiệu ứng: rung trứng đóng 5s → vỡ trứng + quà zoom-in + pháo giấy
+      if (revealTimer) clearTimeout(revealTimer);
+      revealTimer = setTimeout(() => {
+        const gift = pickPrizeForEgg(i);
+        popupTitle.textContent = 'Chúc mừng!';
+        popupEggImg.classList.remove('is-shaking');
+        popupEggImg.src = 'images/egg-png/opened.png';
+        popupGiftImg.src = gift.image;
+        popupGiftImg.classList.add('show');
+        spawnConfetti();
+
+        prizeName.textContent = gift.title;
+        prizeName.classList.add('show');
+      }, 5000);
+    }
+
+    function spawnConfetti() {
+      const colors = ['#a31c1e', '#7a1417', '#a67c00', '#fffdd0', '#1b4d3e', '#ffffff'];
+      const pieces = 46;
+      for (let i = 0; i < pieces; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.top = (-10 - Math.random() * 30) + '%';
+        p.style.setProperty('--x0', (Math.random() * 40 - 20) + 'px');
+        p.style.setProperty('--y0', (Math.random() * 20) + 'px');
+        p.style.setProperty('--x1', (Math.random() * 520 - 260) + 'px');
+        p.style.setProperty('--y1', (420 + Math.random() * 380) + 'px');
+        p.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+        p.style.animationDelay = (Math.random() * 160) + 'ms';
+        p.style.animationDuration = (900 + Math.random() * 700) + 'ms';
+        confetti.appendChild(p);
+      }
+      // Cleanup sau 2s
+      setTimeout(() => { confetti.innerHTML = ''; }, 2200);
+    }
+
+    function closeOverlay() {
+      overlay.classList.remove('show');
+      if (revealTimer) {
+        clearTimeout(revealTimer);
+        revealTimer = null;
+      }
+      confetti.innerHTML = '';
+      popupGiftImg.classList.remove('show');
+      popupEggImg.classList.remove('is-shaking');
+      activeEggIndex = null;
+    }
+
+    function onEggClick(i) {
+      // Nếu trứng đã đập, vẫn cho mở popup xem lại quà (nếu muốn disable, return ở đây)
+      if (!opened[i]) opened[i] = true;
+      renderBoard();
+      openOverlay(i);
+    }
+
+    overlay.addEventListener('click', () => {
+      // Click bất kỳ vùng nào: đóng popup và tiếp tục đập trứng
+      closeOverlay();
+    });
+
+    // Ngăn click trong popup bị "double" không cần thiết (vẫn đóng bình thường vì overlay bắt)
+    document.getElementById('popup').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeOverlay();
+    });
+
+    renderBoard();
+  </script>
+</body>
+</html>
+
