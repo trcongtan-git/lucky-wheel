@@ -9,9 +9,19 @@ let slowSpinAnimation = null; // Animation quay chậm
 
 const SPLIT_STORAGE_KEY = 'lucky-spin-split-store';
 const MAIN_STORAGE_KEY = 'lucky-spin-store';
+const DEFAULT_SPLIT_PLAYERS = [
+    'Anh Tấn', 'Chị Trâm', 'Anh Hiếu', 'Chị Ý', 'Chú Hiệp', 'Chú Đề', 'Chú La', 'Chú Lộc',
+    'Anh Phong', 'Chị Thuý Anh', 'Chị Lương', 'O Hà', 'Anh Quang', 'O Ty', 'O Loan', 'O Lê',
+    'Chị Tỵ', 'Chị Na', 'Chị Hằng', 'O Lành', 'O Huế', 'O Thanh'
+];
 function useSplitStorage() {
     const p = (window.location.pathname || '').replace(/\/+$/, '');
     return p === '/split';
+}
+
+/** Người chơi còn lại trên vòng quay (chưa trúng trong results) */
+function getAvailablePlayers() {
+    return players.filter((p) => !results.some((r) => r.winner === p));
 }
 
 // Load: /split → localStorage; trang chính → API, nếu API lỗi (Vercel static) → localStorage
@@ -21,11 +31,13 @@ async function loadData() {
             const raw = localStorage.getItem(SPLIT_STORAGE_KEY);
             if (raw) {
                 const data = JSON.parse(raw);
-                if (Array.isArray(data.players)) players = data.players;
+                if (Array.isArray(data.players) && data.players.length > 0) players = data.players;
                 if (Array.isArray(data.results)) results = data.results;
             }
+            if (players.length === 0) players = DEFAULT_SPLIT_PLAYERS.slice();
         } catch (e) {
             console.warn('Không đọc được dữ liệu từ localStorage (split):', e.message);
+            if (players.length === 0) players = DEFAULT_SPLIT_PLAYERS.slice();
         }
         return;
     }
@@ -79,17 +91,21 @@ function saveData() {
         });
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', async () => {
+// Initialize (chạy ngay nếu DOM đã sẵn sàng, tránh Next.js client nav không fire DOMContentLoaded)
+async function runInit() {
     canvas = document.getElementById('wheelCanvas');
+    if (!canvas) {
+        setTimeout(runInit, 50);
+        return;
+    }
     ctx = canvas.getContext('2d');
     wheelContainer = document.getElementById('wheelContainer');
     wheelWrapper = document.getElementById('wheelWrapper');
 
-    // Gọi ngay lần đầu (có thể wrapper chưa có kích thước cuối → lệch tâm)
     setCanvasSize();
 
-    document.getElementById('fileInput').addEventListener('change', handleFileImport);
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.addEventListener('change', handleFileImport);
     const btnParticipant = document.getElementById('btnParticipant');
     const participantPopup = document.getElementById('participantPopup');
     const btnImportParticipant = document.getElementById('btnImportParticipant');
@@ -109,7 +125,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnImportParticipant && participantPopup) {
         btnImportParticipant.addEventListener('click', () => {
             participantPopup.classList.remove('is-open');
-            document.getElementById('fileInput').click();
+            const fi = document.getElementById('fileInput');
+            if (fi) fi.click();
         });
     }
     if (btnDownloadTemplate && participantPopup) {
@@ -118,11 +135,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             downloadTemplate();
         });
     }
-    document.getElementById('playButton').addEventListener('click', startSpin);
-    document.getElementById('closePopup').addEventListener('click', closePopup);
-    document.getElementById('shareBtn').addEventListener('click', closePopup);
-    document.getElementById('resultBtn').addEventListener('click', showResults);
-    document.getElementById('deleteResult').addEventListener('click', deleteLastResult);
+    const playBtn = document.getElementById('playButton');
+    if (playBtn) playBtn.addEventListener('click', startSpin);
+    const closePopupEl = document.getElementById('closePopup');
+    if (closePopupEl) closePopupEl.addEventListener('click', closePopup);
+    const shareBtnEl = document.getElementById('shareBtn');
+    if (shareBtnEl) shareBtnEl.addEventListener('click', closePopup);
+    const resultBtnEl = document.getElementById('resultBtn');
+    if (resultBtnEl) resultBtnEl.addEventListener('click', showResults);
+    const deleteResultEl = document.getElementById('deleteResult');
+    if (deleteResultEl) deleteResultEl.addEventListener('click', deleteLastResult);
 
     await loadData();
     drawWheel();
@@ -170,7 +192,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             menubarButtons.appendChild(btnEgg);
         }
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => runInit());
+} else {
+    runInit();
+}
 
 // Tải file template Excel (Mã nhân viên, Tên nhân viên)
 function downloadTemplate() {
@@ -289,25 +317,26 @@ function setCanvasSize() {
     logWheelLayout();
 }
 
-// Update player counter and show/hide play button
+// Update player counter and show/hide play button (đếm số còn lại trên vòng quay)
 function updatePlayerCounter() {
     const counter = document.getElementById('playerCounter');
-    counter.textContent = players.length;
+    const available = getAvailablePlayers();
+    counter.textContent = available.length;
 
-    // Show/hide play button based on whether players list is empty
     const playButton = document.getElementById('playButton');
-    if (players.length === 0) {
+    if (players.length === 0 || available.length === 0) {
         playButton.style.display = 'none';
     } else {
         playButton.style.display = 'flex';
     }
 }
 
-// Draw wheel (dùng kích thước logic vì context đã scale theo devicePixelRatio)
+// Draw wheel (chỉ vẽ người chơi chưa trúng – getAvailablePlayers())
 function drawWheel() {
     if (!ctx || !canvas) return;
     const dpr = window.devicePixelRatio || 1;
     const size = canvas.width / dpr;
+    const available = getAvailablePlayers();
 
     if (players.length === 0) {
         ctx.clearRect(0, 0, size, size);
@@ -320,36 +349,48 @@ function drawWheel() {
         ctx.stroke();
         ctx.fillStyle = '#999';
         const emptyFontSize = Math.max(14, Math.min(20, size / 45));
-        ctx.font = `${emptyFontSize}px Inter`;
+        ctx.font = `${emptyFontSize}px Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Chưa có dữ liệu người tham gia', size / 2, size / 2);
         return;
     }
 
+    if (available.length === 0) {
+        ctx.clearRect(0, 0, size, size);
+        ctx.fillStyle = '#f0f0f0';
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2 - 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#7a1417';
+        const emptyFontSize = Math.max(14, Math.min(22, size / 40));
+        ctx.font = `bold ${emptyFontSize}px Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Đã quay hết', size / 2, size / 2);
+        return;
+    }
+
     const centerX = size / 2;
     const centerY = size / 2;
     const radius = size / 2 - 10;
-    const anglePerPlayer = (Math.PI * 2) / players.length;
+    const anglePerPlayer = (Math.PI * 2) / available.length;
 
     ctx.clearRect(0, 0, size, size);
 
-    // Draw segments with Vintage Christmas theme
-    // Ensure first and last segments have different colors
-    players.forEach((player, index) => {
+    available.forEach((player, index) => {
         const startAngle = index * anglePerPlayer;
         const endAngle = (index + 1) * anglePerPlayer;
 
-        // Determine color: alternate colors, but ensure first and last are different
         let isRedSegment;
 
-        // Segment đầu (index 0) luôn là đỏ
         if (index === 0) {
             isRedSegment = true;
         }
-        // Segment cuối (index length-1) phải khác màu với segment đầu
-        else if (index === players.length - 1) {
-            // Segment đầu là đỏ (index 0), nên segment cuối phải là beige
+        else if (index === available.length - 1) {
             isRedSegment = false;
         }
         // Các segment khác: alternation bình thường
@@ -394,10 +435,10 @@ function drawWheel() {
         const maxTextWidth = segmentArcLength * 0.92;
 
         let fontSize = 24;
-        ctx.font = `bold ${fontSize}px Inter`;
+        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         while (fontSize >= 3 && ctx.measureText(player).width > maxTextWidth) {
             fontSize -= 1;
-            ctx.font = `bold ${fontSize}px Inter`;
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         }
 
         ctx.fillText(player, textRadius, 0);
@@ -410,7 +451,7 @@ function drawWheel() {
     const innerRadius = 60; // Start line from inner radius (center button area)
     // Only draw lines from index 1 to index (length - 1) to avoid double line at 0/360
     // Line at index 0 and index (length) are the same (0° = 360°), so skip one
-    for (let i = 1; i < players.length; i++) {
+    for (let i = 1; i < available.length; i++) {
         const angle = i * anglePerPlayer;
         ctx.beginPath();
         const lineStartX = centerX + Math.cos(angle) * innerRadius;
@@ -536,7 +577,8 @@ function startSlowSpin() {
         cancelAnimationFrame(slowSpinAnimation);
     }
 
-    if (isSpinning || players.length === 0) {
+    const available = getAvailablePlayers();
+    if (isSpinning || available.length === 0) {
         return;
     }
 
@@ -566,25 +608,15 @@ function stopSlowSpin() {
     }
 }
 
-// Calculate winner based on current rotation
+// Calculate winner based on current rotation (theo danh sách còn lại trên vòng)
 function calculateWinnerFromRotation(rotation) {
-    if (players.length === 0) return null;
+    const available = getAvailablePlayers();
+    if (available.length === 0) return null;
 
-    // Normalize rotation to 0-360 range
     let normalizedRotation = rotation % 360;
     if (normalizedRotation < 0) normalizedRotation += 360;
 
-    // Reverse the calculation from startSpin():
-    // In startSpin(), we calculate: targetRotation = (270 - segmentCenterAngle) mod 360
-    // Where segmentCenterAngle = randomIndex * anglePerPlayer + anglePerPlayer/2
-    //
-    // So: targetRotation = (270 - (randomIndex * anglePerPlayer + anglePerPlayer/2)) mod 360
-    //     = (270 - randomIndex * anglePerPlayer - anglePerPlayer/2) mod 360
-    //
-    // To reverse this, we have: normalizedRotation = (270 - segmentCenterAngle) mod 360
-    // So: segmentCenterAngle = (270 - normalizedRotation) mod 360
-
-    const anglePerPlayer = 360 / players.length;
+    const anglePerPlayer = 360 / available.length;
 
     // Calculate the center angle of the segment currently at the pointer
     // When wheel rotates by 'rotation' (CSS counter-clockwise), in canvas it rotates clockwise
@@ -605,45 +637,38 @@ function calculateWinnerFromRotation(rotation) {
     // Round to nearest integer and handle edge cases
     segmentIndex = Math.round(segmentIndex);
 
-    // Handle negative values and wrap around
     while (segmentIndex < 0) {
-        segmentIndex += players.length;
+        segmentIndex += available.length;
     }
-    segmentIndex = segmentIndex % players.length;
+    segmentIndex = segmentIndex % available.length;
 
-    return players[segmentIndex];
+    return available[segmentIndex];
 }
 
-// Start spin
+// Start spin (chỉ quay trong số người chưa trúng)
 function startSpin() {
-    if (isSpinning || players.length === 0) {
+    const available = getAvailablePlayers();
+    if (isSpinning || available.length === 0) {
         if (players.length === 0) {
             alert('Vui lòng import danh sách người chơi trước!');
+        } else if (available.length === 0) {
+            alert('Đã quay hết danh sách!');
         }
         return;
     }
 
-    // Stop slow spin first and wait a bit to ensure it's stopped
     stopSlowSpin();
 
-    // Normalize currentRotation before starting new spin
     currentRotation = currentRotation % 360;
     if (currentRotation < 0) currentRotation += 360;
 
-    // Set spinning state
     isSpinning = true;
     document.getElementById('playButton').classList.add('disabled');
 
-    // Calculate random result
-    const randomIndex = Math.floor(Math.random() * players.length);
-    const winner = players[randomIndex];
+    const randomIndex = Math.floor(Math.random() * available.length);
+    const winner = available[randomIndex];
 
-    // Calculate rotation
-    // Pointer is at top of wheel (270° in canvas coordinates)
-    // In canvas: 0° = right (3 o'clock), 90° = bottom, 180° = left, 270° = top (where pointer is)
-    // CSS transform rotates counter-clockwise (positive rotation = counter-clockwise)
-
-    const anglePerPlayer = 360 / players.length;
+    const anglePerPlayer = 360 / available.length;
 
     // Calculate the center angle of the selected segment in canvas coordinates
     // Segment 0 starts at 0° (right/3 o'clock), so center is at anglePerPlayer/2
@@ -708,7 +733,7 @@ function showResult(winner) {
     updateResultCounter();
     saveData();
 
-    // Show winner popup
+    // Show winner popup trước, ~2s sau mới loại người trúng khỏi vòng (tránh vòng đổi hình khi popup vừa hiện)
     const popupContent = document.querySelector('.popup-content');
     popupContent.classList.remove('show-results'); // Bỏ class để giữ width mặc định
 
@@ -723,12 +748,14 @@ function showResult(winner) {
     document.getElementById('resultPopup').classList.add('show');
     document.body.classList.add('popup-open');
 
-    // Reset spinning state immediately
     isSpinning = false;
-
-    // Normalize currentRotation to 0-360 range to avoid issues
     currentRotation = currentRotation % 360;
     if (currentRotation < 0) currentRotation += 360;
+
+    setTimeout(() => {
+        drawWheel();
+        updatePlayerCounter();
+    }, 2000);
 }
 
 // Update result counter
@@ -772,12 +799,14 @@ function showResults() {
     document.body.classList.add('popup-open');
 }
 
-// Delete last result (không lưu kết quả)
+// Delete last result (đưa người đó trở lại vòng quay)
 function deleteLastResult() {
     if (results.length > 0) {
         results.pop();
         updateResultCounter();
         saveData();
+        drawWheel();
+        updatePlayerCounter();
         closePopup();
     }
 }

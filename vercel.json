@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/", "destination": "/tantc02-company-sharing.html" },
-    { "source": "/split", "destination": "/unified.html" }
-  ]
-}

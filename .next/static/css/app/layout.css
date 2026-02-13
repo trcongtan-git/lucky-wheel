@@ -1,0 +1,846 @@
+/*!*************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/globals.css ***!
+  \*************************************************************************************************************************************************************************************************************************************************************/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Nút xóa dữ liệu localStorage – góc dưới trái, chỉ icon */
+.clear-storage-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 200;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(122, 20, 23, 0.85);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+.clear-storage-btn:hover {
+    background: rgba(122, 20, 23, 1);
+    transform: scale(1.05);
+}
+.clear-storage-btn:active {
+    transform: scale(0.98);
+}
+
+#snowCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+html {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    /* background: url('images/background.jpg') center center / cover no-repeat fixed; */
+    background: #02ff73;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    padding-top: 100px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    box-sizing: border-box;
+}
+
+/* Khi nhúng trong trang /split (?split=1): nền trong suốt để thấy background.jpg của trang split */
+body.split-embed {
+    background: transparent !important;
+}
+
+/* Menubar – tối ưu cho tách nền xanh (#02ff73): màu đỏ solid, viền rõ để không bị key và đẹp khi nền trong suốt */
+.menubar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200; /* Trên pointer vòng quay (100) để dropdown không bị che */
+    padding: 8px;
+}
+
+.menubar-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #a31c1e;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.menubar-content:hover {
+    background: #b92224;
+    border-color: #6b1214;
+}
+
+.logo {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.menubar-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menubar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #8b1819;
+    border: 1px solid #7a1417;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+}
+
+.menubar-btn:hover {
+    background: #9a1c1e;
+    border-color: #6b1214;
+    transform: translateY(-1px);
+}
+
+.menubar-btn:active {
+    transform: translateY(0);
+    background: #7a1417;
+}
+
+.menubar-btn .btn-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menubar-btn .btn-text {
+    font-size: 0.9rem;
+}
+
+.participant-dropdown-wrap {
+    position: relative;
+}
+
+.participant-popup {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    padding: 6px;
+    z-index: 200;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.participant-popup.is-open {
+    display: flex;
+}
+
+.participant-popup-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.participant-popup-option:hover {
+    background: rgba(139, 24, 25, 0.08);
+    color: #8b1819;
+}
+
+.participant-popup-option .btn-text {
+    font-size: 0.9rem;
+}
+
+.player-counter-small,
+.result-counter-small {
+    background: #7a1417;
+    border: 1px solid #6b1214;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    min-width: 20px;
+    text-align: center;
+    margin-left: 4px;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    overflow: visible;
+}
+
+.header {
+    text-align: center;
+    color: white;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+}
+
+
+.wheel-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 2s cubic-bezier(0.34, 1.56, 0.64, 1), position 2s ease;
+    /* Sử dụng overflow: hidden để cắt phần thừa khi wheel quay 45 độ */
+    overflow: hidden;
+    /* Thêm padding để có không gian cho wheel khi quay (đường chéo = size * √2 ≈ size * 1.414) */
+    /* Padding được tính động dựa trên kích thước wheel thực tế */
+    padding: max(20px, calc(min(900px, 70vh, 70vw) * 0.207)); /* (√2 - 1) / 2 ≈ 0.207 */
+    box-sizing: border-box;
+    /* Đảm bảo container không vượt quá viewport */
+    max-height: calc(100vh - 140px); /* Trừ đi padding-top của body (100px) và margin (40px) */
+}
+
+.wheel-container.zoomed {
+    position: fixed;
+    z-index: 50;
+}
+
+/* Wrapper cùng kích thước wheel: pointer định vị theo mép trên wheel (top âm) → đúng mọi tỉ lệ */
+.wheel-inner-wrap {
+    position: relative;
+    width: min(900px, 70vh, 70vw);
+    height: min(900px, 70vh, 70vw);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wheel-wrapper {
+    position: relative;
+    width: min(900px, 70vh, 70vw);
+    height: min(900px, 70vh, 70vw);
+    max-width: 900px;
+    max-height: 900px;
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Căn giữa canvas trong wrapper, tránh lệch do inline/baseline */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#wheelCanvas {
+    display: block; /* Tránh khoảng trống do baseline (inline) */
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 50%;
+    background: white;
+}
+
+.center-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    background: #1B4D3E; /* Forest Green */
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 10;
+    border: 4px solid #FFFDD0; /* Cream white border */
+    pointer-events: auto;
+}
+
+.center-button:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.center-button:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.center-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.play-icon {
+    font-size: 2.5rem;
+    color: #FFFDD0; /* Cream white */
+}
+
+.play-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 1px;
+}
+
+/* Pointer trong .wheel-inner-wrap: top âm cố định → luôn ngay trên mép wheel, mọi tỉ lệ */
+.pointer {
+    position: absolute;
+    top: -48px; /* xuống nữa, đầu pointer gần/chạm mép wheel */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 72px;
+    z-index: 100;
+    pointer-events: none;
+    transition: transform 2s cubic-bezier(0.34, 1.56, 0.64, 1), position 2s ease;
+}
+
+/* Khi zoom, pointer nằm trong .wheel-container nên tự động scale/theo wheel, không cần override */
+.wheel-container.zoomed .pointer {
+    z-index: 100;
+}
+
+.pointer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    background: #D4AF37; /* Gold */
+    border-radius: 50% 50% 50% 0;
+    transform: translateX(-50%) rotate(-45deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.pointer-hole {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: 2.5px solid rgba(192, 192, 192, 0.8);
+    border-radius: 50%;
+    z-index: 2;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 
+                0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.pointer-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: #5C2E1F; /* Dark reddish-brown */
+    border-radius: 50%;
+}
+
+.pointer-tip {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 38px solid #D4AF37; /* Gold */
+    /* Loại bỏ filter để tránh shadow ở cạnh trên, shadow chính đã được áp dụng ở .pointer */
+}
+
+.result-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+    /* Cho phép click xuyên qua overlay để nhấn được menubar; chỉ khung popup nhận click */
+    pointer-events: none;
+}
+
+.result-popup .popup-content {
+    pointer-events: auto;
+}
+
+.result-popup.show {
+    display: flex;
+}
+
+body.popup-open .wheel-container,
+body.popup-open .pointer {
+    visibility: hidden;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.popup-content {
+    position: relative;
+    background: #F5E6BE; /* Creamy Beige như segment vòng quay */
+    border-radius: 24px;
+    padding: 40px 30px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Tăng width popup khi hiển thị lịch sử */
+.popup-content.show-results {
+    max-width: 900px;
+    width: 95%;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.popup-header-buttons {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.popup-delete {
+    background: rgba(122, 20, 23, 0.2); /* Red với opacity */
+    border: none;
+    color: #7A1417; /* Deep Red */
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.popup-delete i {
+    font-size: 18px;
+}
+
+.popup-delete:hover {
+    background: rgba(122, 20, 23, 0.3);
+    transform: scale(1.1);
+}
+
+.popup-delete.hidden {
+    display: none;
+}
+
+.popup-close {
+    background: rgba(74, 44, 42, 0.2); /* Dark brown với opacity */
+    border: none;
+    color: #4A2C2A; /* Dark brown */
+    font-size: 28px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.popup-close:hover {
+    background: rgba(74, 44, 42, 0.3);
+    transform: scale(1.1);
+}
+
+.popup-illustration {
+    margin: 20px 0 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.party-popper {
+    font-size: 80px;
+    animation: bounce 0.6s ease;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    background: white;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.popup-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #4A2C2A; /* Dark brown như text trên segment beige */
+    margin: 0 0 20px;
+    text-shadow: none;
+}
+
+.popup-body {
+    margin: 20px 0;
+    flex: 1 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.congratulations-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #4A2C2A; /* Dark brown như text trên segment beige */
+    margin: 0 0 15px;
+    text-shadow: none;
+}
+
+.winner-name {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #FFFDD0; /* Cream white như text trên segment đỏ */
+    margin: 0;
+    word-wrap: break-word;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    padding: 16px 24px;
+    text-align: center;
+    background: linear-gradient(135deg, #7A1417 0%, #921A1D 100%); /* Deep Red gradient như segment đỏ */
+    border-radius: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.results-list {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.result-item {
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: #FFFDD0; /* Cream white như text trên segment đỏ */
+    padding: 14px 20px;
+    margin: 0;
+    background: linear-gradient(135deg, #7A1417 0%, #921A1D 100%); /* Deep Red gradient như segment đỏ */
+    border-radius: 12px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    white-space: nowrap; /* Không cho phép rớt dòng */
+    width: -moz-fit-content;
+    width: fit-content; /* Width theo nội dung text */
+    min-width: -moz-fit-content;
+    min-width: fit-content;
+}
+
+.result-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(5px);
+}
+
+.result-item.no-hover {
+    pointer-events: none; /* Bỏ hover effect */
+}
+
+.result-item.no-hover:hover {
+    background: linear-gradient(135deg, #7A1417 0%, #921A1D 100%); /* Giữ nguyên màu đỏ */
+    transform: none;
+}
+
+.popup-footer-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #4A2C2A; /* Dark brown như text trên segment beige */
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    text-shadow: none;
+    opacity: 0.9;
+}
+
+.popup-share-btn {
+    background: linear-gradient(180deg, #F5F5F5 0%, #E0E0E0 100%);
+    color: #333;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-top: 20px;
+    width: 100%;
+    max-width: 280px;
+    align-self: center;
+}
+
+.popup-share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%);
+}
+
+.popup-share-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 80px;
+    }
+
+    .menubar {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        padding: 6px;
+    }
+
+    .menubar-content {
+        padding: 6px 12px;
+        gap: 8px;
+    }
+
+    .logo {
+        font-size: 1rem;
+    }
+
+    .menubar-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .menubar-btn .btn-text {
+        font-size: 0.8rem;
+    }
+
+    .menubar-btn .btn-icon {
+        font-size: 1rem;
+    }
+
+    .player-counter-small,
+    .result-counter-small {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .wheel-inner-wrap {
+        width: min(600px, 80vh, 90vw);
+        height: min(600px, 80vh, 90vw);
+    }
+    
+    .wheel-wrapper {
+        width: min(600px, 80vh, 90vw);
+        height: min(600px, 80vh, 90vw);
+        max-width: 600px;
+        max-height: 600px;
+    }
+    
+    .wheel-container {
+        padding: calc(min(600px, 80vh, 90vw) * 0.207);
+    }
+    
+    .pointer {
+        top: -48px; /* xuống nữa (mobile) */
+    }
+
+    .center-button {
+        width: 100px;
+        height: 100px;
+    }
+
+    .play-icon {
+        font-size: 1.5rem;
+    }
+
+    .popup-content {
+        padding: 30px 20px;
+        min-height: 450px;
+        max-width: 90%;
+    }
+    
+    .party-popper {
+        font-size: 60px;
+        width: 90px;
+        height: 90px;
+    }
+    
+    .popup-title {
+        font-size: 1.5rem;
+    }
+
+    .winner-name {
+        font-size: 1.2rem;
+    }
+    
+    .popup-share-btn {
+        padding: 14px 30px;
+        font-size: 1rem;
+    }
+}
+
+/* === Unified page (/split) + egg game === */
+body.unified-page { background: url('/images/background.jpg') center center / cover no-repeat fixed; }
+.wheel-viewport { width: 100%; min-height: 100vh; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.wheel-viewport .container { margin-left: auto; margin-right: auto; }
+.egg-fullscreen { display: none; position: fixed; inset: 0; z-index: 50; overflow: auto; background: transparent; }
+body.unified-page.view-egg .wheel-viewport { display: none; }
+body.unified-page.view-egg .egg-fullscreen { display: block; }
+.popup-egg-btn { background: rgba(27, 77, 62, 0.25); border: none; color: #1B4D3E; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.3s ease; }
+.popup-egg-btn:hover { background: rgba(27, 77, 62, 0.4); transform: scale(1.05); }
+.egg-game { height: 100%; min-height: 100vh; margin: 0; font-family: Inter, system-ui, sans-serif; color: white; overflow: auto; background: transparent; }
+.egg-game .wrap { height: 100%; min-height: 100vh; display: grid; place-items: center; padding: 24px 18px; }
+.egg-game .board { width: min(980px, 96vw); display: grid; grid-template-columns: repeat(7, 1fr); grid-gap: clamp(8px, 1.5vw, 14px); gap: clamp(8px, 1.5vw, 14px); align-items: stretch; }
+.egg-game .egg { position: relative; height: clamp(120px, 16vh, 170px); border-radius: 22px; border: 2px solid rgba(0,0,0,0.28); background: rgba(0,0,0,0.16); cursor: pointer; overflow: hidden; isolation: isolate; transform: translateZ(0); transition: transform 160ms ease, background 160ms ease, border-color 160ms ease; }
+.egg-game .egg:hover { transform: translateY(-2px); background: rgba(0,0,0,0.22); border-color: rgba(0,0,0,0.38); }
+.egg-game .egg:active { transform: translateY(0); }
+.egg-game .egg::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 80% at 30% 20%, rgba(255,255,255,0.24), transparent 55%), radial-gradient(90% 70% at 70% 70%, rgba(255,255,255,0.18), transparent 60%), repeating-linear-gradient(135deg, rgba(255,255,255,0.08) 0 10px, rgba(0,0,0,0.05) 10px 20px); opacity: 0.9; z-index: 0; }
+.egg-game .egg::after { content: ""; position: absolute; inset: -40%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), transparent 45%); transform: rotate(18deg); opacity: 0.8; z-index: 0; }
+.egg-game .egg-shape { position: absolute; inset: 14px; display: block; z-index: 1; }
+.egg-game .egg-base { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.egg-game .egg-number { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center; font-weight: 900; color: #4a2c2a; background: rgba(255,255,255,0.85); border: 2px solid rgba(0,0,0,0.22); z-index: 3; }
+.egg-game .egg-gift { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -58%); width: min(120px, 46%); height: auto; object-fit: contain; pointer-events: none; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 4; background: rgba(255,255,255,0.8); border-radius: 16px; padding: 8px; border: 1px solid rgba(0,0,0,0.12); }
+.egg-game .egg-gift-text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -58%); width: min(120px, 85%); max-width: 140px; pointer-events: none; -webkit-user-select: none; -moz-user-select: none; user-select: none; z-index: 4; background: rgba(255,255,255,0.9); border-radius: 12px; padding: 8px 10px; border: 1px solid rgba(0,0,0,0.12); font-size: clamp(10px, 2.2vw, 14px); font-weight: 700; color: #4a2c2a; text-align: center; line-height: 1.2; word-break: break-word; }
+.egg-game .egg.is-opened { cursor: default; pointer-events: none; }
+.egg-game .egg.is-opened:hover { transform: none; }
+.egg-game .egg-overlay { position: fixed; inset: 0; display: none; z-index: 999; background: transparent; }
+.egg-game .egg-overlay.show { display: grid; place-items: center; }
+/* Khi popup đang mở quà: ẩn danh sách trứng bên dưới */
+.egg-game:has(.egg-overlay.show) .wrap { display: none; }
+.egg-game .egg-popup { width: min(760px, 94vw); min-height: 520px; border-radius: 28px; background: #f5e6be; color: #4a2c2a; border: 3px solid #a67c00; position: relative; overflow: hidden; padding: 28px 22px; display: grid; grid-template-rows: auto 1fr auto; grid-gap: 18px; gap: 18px; }
+.egg-game .egg-popup .hint { position: absolute; top: 14px; right: 14px; font-weight: 700; font-size: 1.2rem; color: rgba(74,44,42,0.9); background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.12); width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.egg-game .egg-popup .egg-popup-title { text-align: center; font-weight: 900; font-size: clamp(22px, 3.4vw, 34px); letter-spacing: 0.2px; margin: 8px 0 0; }
+.egg-game .reveal { display: grid; place-items: center; position: relative; margin: 0 auto; width: min(420px, 76vw); aspect-ratio: 1 / 1; }
+.egg-game .popup-egg { width: min(320px, 64vw); height: auto; object-fit: contain; -webkit-user-select: none; -moz-user-select: none; user-select: none; pointer-events: none; transform-origin: 50% 70%; z-index: 2; }
+.egg-game .popup-egg.is-shaking { animation: eggShake 180ms ease-in-out infinite; }
+@keyframes eggShake { 0% { transform: translateX(0) rotate(0deg) scale(1); } 25% { transform: translateX(-4px) rotate(-2deg) scale(1.01); } 50% { transform: translateX(4px) rotate(2deg) scale(1.01); } 75% { transform: translateX(-3px) rotate(-1.5deg) scale(1.01); } 100% { transform: translateX(0) rotate(0deg) scale(1); } }
+.egg-game .popup-gift { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) scale(0.2); transform-origin: 50% 90%; width: min(260px, 70vw); height: auto; object-fit: contain; -webkit-user-select: none; -moz-user-select: none; user-select: none; pointer-events: none; z-index: 3; opacity: 0; background: rgba(255,255,255,0.92); border-radius: 18px; padding: 12px; border: 1px solid rgba(0,0,0,0.12); }
+.egg-game .popup-gift.show { opacity: 1; animation: giftZoom 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.egg-game .popup-gift-text { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) scale(0.8); transform-origin: 50% 50%; max-width: min(320px, 85vw); padding: 16px 20px; border-radius: 18px; background: rgba(255,255,255,0.95); border: 2px solid #a67c00; font-weight: 900; font-size: clamp(18px, 2.8vw, 26px); color: #7a1417; text-align: center; line-height: 1.3; word-break: break-word; z-index: 3; opacity: 0; pointer-events: none; }
+.egg-game .popup-gift-text.show { opacity: 1; animation: giftZoom 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+@keyframes giftZoom { from { transform: translate(-50%, -50%) scale(0.2); } to { transform: translate(-50%, -50%) scale(1); } }
+.egg-game .confetti { position: absolute; inset: -10%; overflow: hidden; pointer-events: none; z-index: 4; }
+.egg-game .confetti-piece { position: absolute; width: 10px; height: 16px; border-radius: 3px; opacity: 0.95; animation: confettiFall 1200ms ease-out forwards; }
+@keyframes confettiFall { 0% { transform: translate3d(var(--x0), var(--y0), 0) rotate(0deg); opacity: 1; } 100% { transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--rot)); opacity: 0; } }
+.egg-game .prize-name { display: none; text-align: center; margin: 4px auto 0; padding: 10px 14px 12px; border-radius: 18px; background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.12); font-weight: 900; font-size: clamp(18px, 2.4vw, 26px); color: #7a1417; word-break: break-word; }
+.egg-game .prize-name.show { display: block; }
+.egg-game .footer { text-align: center; font-weight: 700; opacity: 0.9; color: #4a2c2a; }
+@media (max-width: 760px) { .egg-game .board { grid-template-columns: repeat(5, 1fr); gap: 8px; } .egg-game .egg { height: 120px; } .egg-game .egg-gift-text { font-size: 10px; padding: 4px 6px; } }
+
+
